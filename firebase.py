@@ -92,4 +92,4 @@ class FirebaseApi:
         name = self.get_name()
         role = db.collection("rooms").document(self.room_id).collection(
             "members").document(name).get(["role"]).to_dict()["role"]
-        return Role(role)
+        return Role.of(role)
