@@ -25,3 +25,15 @@ async def write(request: Request, hello: Hello):
     print(api.uid)
     print(hello)
     return {"message": "Write", "param": f"Hello(mes={hello.message}, param={hello.param})"}
+
+
+@app.post("/test")
+async def test(request: Request):
+    api = FirebaseApi(request.headers['token'], "AB12C3")
+    print(api.is_member())
+
+
+@app.post("/reset")
+async def reset(request: Request):
+    api = FirebaseApi(request.headers['token'], "AB12C3")
+    api.reset_firestore()
