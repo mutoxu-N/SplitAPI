@@ -30,7 +30,8 @@ async def write(request: Request, hello: Hello):
 @app.post("/test")
 async def test(request: Request):
     api = FirebaseApi(request.headers['token'], "AB12C3")
-    print(api.is_member())
+    print("is_member: ", api.is_member())
+    print("role: ", api.get_role())
 
 
 @app.post("/reset")

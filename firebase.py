@@ -3,6 +3,11 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
+from models.role import Role
+
+# サービスアカウントでログイン
+cred = credentials.Certificate("firebase_secret.json")
+firebase_admin.initialize_app(cred)
 
 
 class FirebaseApi:
@@ -10,10 +15,6 @@ class FirebaseApi:
     room_id = None
 
     def __init__(self, token: str, room_id: str) -> None:
-        # サービスアカウントでログイン
-        cred = credentials.Certificate("firebase_secret.json")
-        firebase_admin.initialize_app(cred)
-
         self.room_id = room_id
 
         try:
@@ -36,14 +37,16 @@ class FirebaseApi:
         room_AB12C3 = db.collection("rooms").document("AB12C3")
         room_AB12C3.set({
             "settings": {"name": "sample room"},
-            "users": [self.uid],
+            "users": {
+                self.uid: "sample member",
+            },
         })
 
         room_AB12C3.collection("members").add({
             "name": "sample member",
             "id": self.uid,
             "weight": 1.0,
-            "role": "owner",
+            "role": "OWNER",
         }, "sample member")
 
         room_AB12C3.collection("pending").add({
@@ -66,8 +69,27 @@ class FirebaseApi:
         })
 
     def is_member(self) -> bool:
-        # 判定
+        # ルームのメンバーか否かを判定
+        if self.uid is None:
+            return False
         db = firestore.client()
         members = set(db.collection("rooms").document(
-            self.room_id).get(["users"]).to_dict()["users"])
+            self.room_id).get(["users"]).to_dict()["users"].keys())
         return self.uid in members
+
+    def get_name(self) -> str:
+        # ルーム内の表示名を取得
+        if not self.is_member():
+            return None
+
+        db = firestore.client()
+        return db.collection("rooms").document(
+            self.room_id).get(["users"]).to_dict()["users"][self.uid]
+
+    def get_role(self) -> Role:
+        # ルーム内の役職を取得
+        db = firestore.client()
+        name = self.get_name()
+        role = db.collection("rooms").document(self.room_id).collection(
+            "members").document(name).get(["role"]).to_dict()["role"]
+        return Role(role)
