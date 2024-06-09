@@ -159,6 +159,20 @@ class FirebaseApi:
                 settings["on_new_member_request"] == "accept_by_mods" or \
                 settings["on_new_member_request"] == "accept_by_owner":
             # 承認待ち
+            db.collection("pending_users").add({
+                "id": self.uid,
+                "is_approved": None,
+            }, self.uid)
+            db.collection("rooms").document(self.room_id).collection("pending").add({
+                "name": member_name,
+                "id": self.uid,
+                "is_accepted": False,
+                "approval": 0,
+                "required": int(len(members.keys())/100*settings["accept_rate"]),
+                "size": len(members.keys()),
+                "voted": []
+            }, member_name)
+
             ret["pending"] = True
 
         return ret
