@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
-from models.role import Role
+from models import Role
 
 # サービスアカウントでログイン
 cred = credentials.Certificate("firebase_secret.json")
