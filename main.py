@@ -49,3 +49,11 @@ async def room_create(request: Request, settings: Settings):
     api.create_room(settings, request.headers['name'])
 
     return {"room_id": room_id}
+
+
+@app.post("/room/{room_id}/join")
+async def room_join(room_id, request: Request):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.join_room(request.headers['name'])
+
+    return result

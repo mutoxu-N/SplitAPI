@@ -122,3 +122,43 @@ class FirebaseApi:
             "weight": 1.0,
             "role": "OWNER",
         }, owner_name)
+
+    def join_room(self, member_name: str) -> dict:
+        ret = {"joined": False, "pending": False}
+        db = firestore.client()
+        doc = db.collection("rooms").document(
+            self.room_id).get()
+
+        # ルームが無いなら参加しない
+        if not doc.exists:
+            return ret
+
+        # 既に参加済みなら参加許可
+        members = doc.to_dict()["users"]
+        if self.uid in members.keys():
+            ret["joined"] = True
+            return ret
+
+        settings = doc.to_dict()["settings"]
+        if settings["on_new_member_request"] == "always":
+            # 誰でも参加可能
+            db.collection("rooms").document(self.room_id).collection("members").add({
+                "name": member_name,
+                "id": self.uid,
+                "weight": 1.0,
+                "role": "NORMAL",
+            }, member_name)
+            db.collection("rooms").document(self.room_id).set({
+                "users": {
+                    self.uid: member_name,
+                },
+            }, merge=True)
+            ret["joined"] = True
+
+        elif settings["on_new_member_request"] == "vote" or \
+                settings["on_new_member_request"] == "accept_by_mods" or \
+                settings["on_new_member_request"] == "accept_by_owner":
+            # 承認待ち
+            ret["pending"] = True
+
+        return ret
