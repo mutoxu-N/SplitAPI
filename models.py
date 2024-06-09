@@ -10,7 +10,7 @@ class Role(Enum):
     @classmethod
     def of(self, role_name: str):
         for e in Role:
-            if e.name == role_name:
+            if e.name == role_name.upper():
                 return e
         raise ValueError(f"{role_name} is not a valid Role")
 

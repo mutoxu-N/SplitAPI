@@ -9,14 +9,6 @@ os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "localhost:9099"
 app = FastAPI()
 
 
-@app.post("/write")
-async def write(request: Request, hello: Hello):
-    api = FirebaseApi(request.headers['token'])
-    print(api.uid)
-    print(hello)
-    return {"message": "Write", "param": f"Hello(mes={hello.message}, param={hello.param})"}
-
-
 @app.post("/test")
 async def test(request: Request):
     api = FirebaseApi(request.headers['token'], "AB12C3")
@@ -28,3 +20,9 @@ async def test(request: Request):
 async def reset(request: Request):
     api = FirebaseApi(request.headers['token'], "AB12C3")
     api.reset_firestore()
+
+
+@app.post("/room/create")
+async def room_create(request: Request):
+    print(request.body)
+    return {"room_id": "1AB23C"}
