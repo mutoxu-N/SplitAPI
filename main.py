@@ -1,5 +1,5 @@
 from models import Settings
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Body
 from pydantic import BaseModel
 from firebase import FirebaseApi
 
@@ -31,7 +31,7 @@ async def reset(request: Request):
 
 
 @app.post("/room/create")
-async def room_create(request: Request, settings: Settings):
+async def room_create(request: Request, settings: Settings = Body(embed=True)):
     # 新しいルームIDの作成
     def gen_room_id() -> str:
         chars = [random.choice(string.ascii_uppercase + string.digits)
