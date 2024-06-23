@@ -20,8 +20,6 @@ app = FastAPI()
 @app.post("/test")
 async def test(request: Request):
     api = FirebaseApi(request.headers['token'], "AB12C3")
-    print("is_member: ", api.is_member())
-    print("role: ", api.get_role())
 
 
 @app.post("/reset")
@@ -56,4 +54,12 @@ async def room_join(room_id, request: Request):
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.join_room(request.headers['name'])
 
+    return result
+
+
+@app.post("/room/{room_id}/vote")
+async def vote(room_id, request: Request, vote_for: str, accepted: bool):
+    # TODO: Androidアプリ側の実装をしてからデバッグする
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.vote()
     return result
