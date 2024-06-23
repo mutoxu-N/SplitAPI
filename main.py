@@ -1,7 +1,9 @@
-from models import Settings
-from fastapi import FastAPI, Request, Body
+from models import Settings, User
+from fastapi import FastAPI, Request, Body, status
 from pydantic import BaseModel
 from firebase import FirebaseApi
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 import random
 import string
@@ -70,4 +72,18 @@ async def accept(room_id, request: Request, accept_for: str, accepted: bool):
     # TODO: Androidアプリ側の実装をしてからデバッグする
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.accept(accept_for, accepted)
-    return result
+    return {"succeed": result}
+
+
+@app.post("/room/{room_id}/create_guest")
+async def create_guest(room_id, request: Request, user: User):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.create_guest(user)
+    return {"succeed": result}
+
+
+@app.exception_handler(RequestValidationError)
+async def handler(request: Request, exc: RequestValidationError):
+    print(exc)
+    print(await request.json())
+    return JSONResponse(content={}, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)

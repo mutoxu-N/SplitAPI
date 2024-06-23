@@ -1,8 +1,8 @@
 from pydantic import BaseModel
-from enum import Enum
+from enum import IntEnum
 
 
-class Role(Enum):
+class Role(IntEnum):
     OWNER = 3
     MODERATOR = 2
     NORMAL = 1
@@ -35,6 +35,6 @@ class Receipt(BaseModel):
 
 class User(BaseModel):
     name: str
-    id: str | None
-    weight: int
+    uid: str | None
+    weight: float
     role: int

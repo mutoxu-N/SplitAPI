@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
-from models import Role, Settings
+from models import Role, Settings, User
 
 # サービスアカウントでログイン
 cred = credentials.Certificate("firebase_secret.json")
@@ -283,6 +283,26 @@ class FirebaseApi:
             else:
                 return False
 
+    def create_guest(self, user: User):
+        if not self.is_member():
+            return False
+
+        if self.get_role() >= Role.MODERATOR:
+            db = firestore.client()
+            col = db \
+                .collection("rooms").document(self.room_id) \
+                .collection("members")
+            col.add({
+                "name": user.name,
+                "id": None,
+                "weight": user.weight,
+                "role": user.role
+            }, user.name)
+            return True
+
+        else:
+            return False
+
     def __join(self, member_name=None, uid=None):
         if member_name is None or uid is None:
             member_name = self.get_name()
@@ -291,7 +311,7 @@ class FirebaseApi:
         db = firestore.client()
         db.collection("rooms").document(self.room_id).collection("members").add({
             "name": member_name,
-            "id": uid,
+            "id": None,
             "weight": 1.0,
             "role": "NORMAL",
         }, member_name)
