@@ -61,5 +61,13 @@ async def room_join(room_id, request: Request):
 async def vote(room_id, request: Request, vote_for: str, accepted: bool):
     # TODO: Androidアプリ側の実装をしてからデバッグする
     api = FirebaseApi(request.headers['token'], room_id)
-    result = api.vote()
+    result = api.vote(vote_for, accepted)
+    return result
+
+
+@app.post("/room/{room_id}/accept")
+async def accept(room_id, request: Request, accept_for: str, accepted: bool):
+    # TODO: Androidアプリ側の実装をしてからデバッグする
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.accept(accept_for, accepted)
     return result

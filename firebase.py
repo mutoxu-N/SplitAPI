@@ -168,6 +168,8 @@ class FirebaseApi:
         return ret
 
     def vote(self, vote_for: str, accepted: bool) -> dict:
+        if not self.is_member():
+            return False
         # TODO: Androidアプリ側の実装をしてからデバッグする
         ret = {"voted": False}
         db = firestore.client()
@@ -196,9 +198,10 @@ class FirebaseApi:
                     "voted": now["voted"] + [self.uid],
                 }, merge=True)
 
-                name = db.collection("rooms").document(self.room_id) \
-                    .collection("pending").document(vote_for).to_dict()["name"]
-                self.__join(name)
+                self.__join(
+                    pending_doc.to_dict()["name"],
+                    pending_doc.to_dict()["id"],
+                )
 
             else:
                 # 投票結果未確定
@@ -224,18 +227,76 @@ class FirebaseApi:
         ret["voted"] = True
         return ret
 
-    def __join(self, member_name=None):
-        if (member_name is None):
+    def accept(self, accept_for: str, accepted: bool):
+        # TODO: Androidアプリ側の実装をしてからデバッグする
+        if not self.is_member():
+            return False
+
+        # ルーム設定が承認制か確認
+        db = firestore.client()
+        doc = db.collection("rooms").document(
+            self.room_id).get()
+        settings = doc.to_dict()["settings"]
+
+        # このユーザーが参加待機中かどうか確認
+        pending_doc = db.collection("rooms").document(self.room_id).collection(
+            "pending").document(accept_for).get()
+        if not pending_doc.exists:
+            # 参加待機中でないならなにもしない
+            return False
+
+        role = self.get_role()
+        if settings["on_new_member_request"] == "accepted_by_mods":
+            if role >= Role.MODERATOR:
+                if accepted:
+                    # 承認
+                    self.__join(
+                        pending_doc.to_dict()["name"],
+                        pending_doc.to_dict()["id"],
+                    )
+
+                pending_doc.set({
+                    "is_accepted": accepted,
+                    "voted": [self.uid],
+                }, merge=True)
+                return True
+
+            else:
+                return False
+
+        if settings["on_new_member_request"] == "accepted_by_owner":
+            if role >= Role.OWNER:
+                if accepted:
+                    # 承認
+                    self.__join(
+                        pending_doc.to_dict()["name"],
+                        pending_doc.to_dict()["id"],
+                    )
+                    return True
+
+                pending_doc.set({
+                    "is_accepted": accepted,
+                    "voted": [self.uid],
+                }, merge=True)
+                return True
+
+            else:
+                return False
+
+    def __join(self, member_name=None, uid=None):
+        if member_name is None or uid is None:
             member_name = self.get_name()
+            uid = self.uid
+
         db = firestore.client()
         db.collection("rooms").document(self.room_id).collection("members").add({
             "name": member_name,
-            "id": self.uid,
+            "id": uid,
             "weight": 1.0,
             "role": "NORMAL",
         }, member_name)
         db.collection("rooms").document(self.room_id).set({
             "users": {
-                self.uid: member_name,
+                uid: member_name,
             },
         }, merge=True)
