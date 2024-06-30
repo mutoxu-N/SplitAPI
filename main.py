@@ -1,5 +1,5 @@
 from models import Settings, User
-from fastapi import FastAPI, Request, Body, status
+from fastapi import FastAPI, Request, Body, status, Form
 from pydantic import BaseModel
 from firebase import FirebaseApi
 from fastapi.exceptions import RequestValidationError
@@ -79,6 +79,13 @@ async def accept(room_id, request: Request, accept_for: str, accepted: bool):
 async def create_guest(room_id, request: Request, user: User):
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.create_guest(user)
+    return {"succeed": result}
+
+
+@app.post("/room/{room_id}/member/edit")
+async def edit_member(room_id, request: Request, old: str = Body(embed=True), new: User = Body(embed=True)):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.edit_member(old, new)
     return {"succeed": result}
 
 

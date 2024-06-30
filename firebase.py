@@ -72,6 +72,10 @@ class FirebaseApi:
         # ルームのメンバーか否かを判定
         if self.uid is None:
             return False
+
+        if not self.check_if_room_exists():
+            return False
+
         db = firestore.client()
         members = set(db.collection("rooms").document(
             self.room_id).get(["users"]).to_dict()["users"].keys())
@@ -298,6 +302,32 @@ class FirebaseApi:
                 "weight": user.weight,
                 "role": user.role
             }, user.name)
+            return True
+
+        else:
+            return False
+
+    def edit_member(self, old: str, new: User):
+        if not self.is_member():
+            return False
+
+        if self.get_role() >= Role.MODERATOR:
+            db = firestore.client()
+            doc = db \
+                .collection("rooms").document(self.room_id) \
+                .collection("members").document(old).get()
+            if doc.exists():
+                doc.delete()
+
+            col = db \
+                .collection("rooms").document(self.room_id) \
+                .collection("members")
+            col.add({
+                "name": new.name,
+                "id": new.uid,
+                "weight": new.weight,
+                "role": new.role
+            }, new.name)
             return True
 
         else:
