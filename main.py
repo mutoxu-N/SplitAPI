@@ -96,6 +96,13 @@ async def edit_settings(room_id, request: Request, settings: Settings = Body(emb
     return {"succeed": result}
 
 
+@app.post("/room/{room_id}/delete")
+async def room_delete(room_id, request: Request):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.room_delete()
+    return {"succeed": result}
+
+
 @app.exception_handler(RequestValidationError)
 async def handler(request: Request, exc: RequestValidationError):
     print(exc)

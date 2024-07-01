@@ -356,6 +356,27 @@ class FirebaseApi:
                 },
             }, merge=True)
             return True
+        return False
+
+    def room_delete(self):
+        if not self.is_member():
+            return False
+
+        if self.get_role() >= Role.OWNER:
+            db = firestore.client()
+            doc = db.collection("rooms").document(self.room_id)
+            pending = doc.collection("pending").list_documents()
+            for p in pending:
+                p.delete()
+            member = doc.collection("members").list_documents()
+            for m in member:
+                m.delete()
+            receipts = doc.collection("receipts").list_documents()
+            for r in receipts:
+                r.delete()
+                doc.delete()
+            return True
+        return False
 
     def __join(self, member_name=None, uid=None):
         if member_name is None or uid is None:
