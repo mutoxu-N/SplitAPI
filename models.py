@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from enum import IntEnum
+from firebase_admin.firestore import SERVER_TIMESTAMP
 
 
 class Role(IntEnum):
@@ -39,3 +40,24 @@ class User(BaseModel):
     uid: str | None
     weight: float
     role: int
+
+
+class Receipt(BaseModel):
+    id: str | None
+    stuff: str
+    paid: str
+    buyers: list[str]
+    payment: int
+    reported_by: str
+    timestamp: str | None
+
+    def toMap(self):
+        return {
+            "id": self.id,
+            "stuff": self.stuff,
+            "paid": self.paid,
+            "buyers": self.buyers,
+            "payment": self.payment,
+            "reported_by": self.reported_by,
+            "timestamp": SERVER_TIMESTAMP,
+        }

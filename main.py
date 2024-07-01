@@ -1,4 +1,4 @@
-from models import Settings, User
+from models import Settings, User, Receipt
 from fastapi import FastAPI, Request, Body, status, Form
 from pydantic import BaseModel
 from firebase import FirebaseApi
@@ -100,6 +100,13 @@ async def edit_settings(room_id, request: Request, settings: Settings = Body(emb
 async def room_delete(room_id, request: Request):
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.room_delete()
+    return {"succeed": result}
+
+
+@app.post("/room/{room_id}/receipt/add")
+async def receipt_add(room_id, request: Request, receipt: Receipt):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.add_receipt(receipt)
     return {"succeed": result}
 
 

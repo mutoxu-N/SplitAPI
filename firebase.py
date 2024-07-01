@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
-from models import Role, Settings, User
+from models import Role, Settings, User, Receipt
 
 # サービスアカウントでログイン
 cred = credentials.Certificate("firebase_secret.json")
@@ -34,6 +34,19 @@ class FirebaseApi:
         # リセット
         db = firestore.client()
         # db.collection("pending_users").document(self.uid)
+
+        doc = db.collection("rooms").document(self.room_id)
+        pending = doc.collection("pending").list_documents()
+        for p in pending:
+            p.delete()
+        member = doc.collection("members").list_documents()
+        for m in member:
+            m.delete()
+        receipts = doc.collection("receipts").list_documents()
+        for r in receipts:
+            r.delete()
+            doc.delete()
+
         room_AB12C3 = db.collection("rooms").document("AB12C3")
         room_AB12C3.set({
             "settings": {
@@ -377,6 +390,23 @@ class FirebaseApi:
                 doc.delete()
             return True
         return False
+
+    def add_receipt(self, receipt: Receipt):
+        if not self.is_member():
+            return False
+
+        receipt.id
+        receipt.reported_by = self.uid
+
+        db = firestore.client()
+        time, doc = db.collection("rooms").document(self.room_id) \
+            .collection("receipts").add(receipt.toMap())
+        doc.set({
+            "id": doc.id,
+            "reported_by": self.uid,
+            "timestamp": time,
+        }, merge=True)
+        return True
 
     def __join(self, member_name=None, uid=None):
         if member_name is None or uid is None:
