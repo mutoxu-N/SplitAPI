@@ -89,6 +89,13 @@ async def edit_member(room_id, request: Request, old: str = Body(embed=True), ne
     return {"succeed": result}
 
 
+@app.post("/room/{room_id}/settings/edit")
+async def edit_settings(room_id, request: Request, settings: Settings = Body(embed=True)):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.edit_settings(settings)
+    return {"succeed": result}
+
+
 @app.exception_handler(RequestValidationError)
 async def handler(request: Request, exc: RequestValidationError):
     print(exc)

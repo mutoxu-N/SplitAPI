@@ -16,6 +16,7 @@ class Role(IntEnum):
 
 
 class Settings(BaseModel):
+    name: str
     split_unit: int
     permission_receipt_create: str
     permission_receipt_edit: str

@@ -36,7 +36,13 @@ class FirebaseApi:
         # db.collection("pending_users").document(self.uid)
         room_AB12C3 = db.collection("rooms").document("AB12C3")
         room_AB12C3.set({
-            "settings": {"name": "sample room"},
+            "settings": {
+                "name": "sample room",
+                "accept_rate": 50,
+                "permission_receipt_create": "OWNER",
+                "split_unit": 10,
+                "on_new_member_request": "always",
+            },
             "users": {
                 self.uid: "sample member",
             },
@@ -130,11 +136,9 @@ class FirebaseApi:
     def join_room(self, member_name: str) -> dict:
         ret = {"joined": False, "pending": False}
         db = firestore.client()
-        doc = db.collection("rooms").document(
-            self.room_id).get()
 
         # ルームが無いなら参加しない
-        if not doc.exists:
+        if not self.check_if_room_exists():
             return ret
 
         # 既に参加済みなら参加許可
@@ -142,6 +146,8 @@ class FirebaseApi:
             ret["joined"] = True
             return ret
 
+        doc = db.collection("rooms").document(
+            self.room_id).get()
         members = doc.to_dict()["users"]
         settings = doc.to_dict()["settings"]
         if settings["on_new_member_request"] == "always":
@@ -315,10 +321,10 @@ class FirebaseApi:
             db = firestore.client()
             doc = db \
                 .collection("rooms").document(self.room_id) \
-                .collection("members").document(old).get()
-            if doc.exists():
-                doc.delete()
+                .collection("members").document(old)
 
+            if doc.get().exists:
+                doc.delete()
             col = db \
                 .collection("rooms").document(self.room_id) \
                 .collection("members")
@@ -333,15 +339,32 @@ class FirebaseApi:
         else:
             return False
 
+    def edit_settings(self, settings: dict):
+        if not self.is_member():
+            return False
+
+        if self.get_role() >= Role.MODERATOR:
+            db = firestore.client()
+            doc = db.collection("rooms").document(self.room_id)
+            doc.set({
+                "settings": {
+                    "split_unit": settings.split_unit,
+                    "permission_receipt_create": settings.permission_receipt_create,
+                    "permission_receipt_create": settings.permission_receipt_edit,
+                    "on_new_member_request": settings.on_new_member_request,
+                    "accept_rate": settings.accept_rate,
+                },
+            }, merge=True)
+            return True
+
     def __join(self, member_name=None, uid=None):
         if member_name is None or uid is None:
             member_name = self.get_name()
             uid = self.uid
-
         db = firestore.client()
         db.collection("rooms").document(self.room_id).collection("members").add({
             "name": member_name,
-            "id": None,
+            "id": uid,
             "weight": 1.0,
             "role": "NORMAL",
         }, member_name)
