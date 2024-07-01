@@ -110,6 +110,13 @@ async def receipt_add(room_id, request: Request, receipt: Receipt):
     return {"succeed": result}
 
 
+@app.post("/room/{room_id}/receipt/edit")
+async def receipt_edit(room_id, request: Request, receipt_id: str = Body(embed=True), receipt: Receipt = Body(embed=True)):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.edit_receipt(receipt_id, receipt)
+    return {"succeed": result}
+
+
 @app.exception_handler(RequestValidationError)
 async def handler(request: Request, exc: RequestValidationError):
     print(exc)

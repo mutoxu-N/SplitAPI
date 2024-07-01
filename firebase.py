@@ -52,7 +52,8 @@ class FirebaseApi:
             "settings": {
                 "name": "sample room",
                 "accept_rate": 50,
-                "permission_receipt_create": "OWNER",
+                "permission_receipt_create": "NORMAL",
+                "permission_receipt_edit": "OWNER",
                 "split_unit": 10,
                 "on_new_member_request": "always",
             },
@@ -80,10 +81,10 @@ class FirebaseApi:
 
         room_AB12C3.collection("receipts").add({
             "stuff": "item",
-            "paid": self.uid,
-            "buyers": [self.uid],
+            "paid": "sample member",
+            "buyers": ["sample member"],
             "payment": 2500,
-            "reported_by": "sample member",
+            "reported_by": self.uid,
             "timestamp": firestore.SERVER_TIMESTAMP,
         })
 
@@ -395,8 +396,11 @@ class FirebaseApi:
         if not self.is_member():
             return False
 
-        receipt.id
-        receipt.reported_by = self.uid
+        # 権限チェック
+        role = self.get_role()
+        perm = Role.of(self.__get_settings().permission_receipt_create)
+        if role < perm:
+            return False
 
         db = firestore.client()
         time, doc = db.collection("rooms").document(self.room_id) \
@@ -406,6 +410,22 @@ class FirebaseApi:
             "reported_by": self.uid,
             "timestamp": time,
         }, merge=True)
+        return True
+
+    def edit_receipt(self, receipt_id: str, receipt: Receipt):
+        if not self.is_member():
+            return False
+
+            # 権限チェック
+        role = self.get_role()
+        perm = Role.of(self.__get_settings().permission_receipt_edit)
+        if role < perm:
+            return False
+
+        db = firestore.client()
+        doc = db.collection("rooms").document(self.room_id) \
+            .collection("receipts").document(receipt_id)
+        doc.set(receipt.toMap(), merge=True)
         return True
 
     def __join(self, member_name=None, uid=None):
@@ -424,3 +444,15 @@ class FirebaseApi:
                 uid: member_name,
             },
         }, merge=True)
+
+    def __get_settings(self):
+        db = firestore.client()
+        doc = db.collection("rooms").document(self.room_id).get().to_dict()
+        return Settings(
+            name=doc["settings"]["name"],
+            split_unit=doc["settings"]["split_unit"],
+            permission_receipt_create=doc["settings"]["permission_receipt_create"],
+            permission_receipt_edit=doc["settings"]["permission_receipt_edit"],
+            on_new_member_request=doc["settings"]["on_new_member_request"],
+            accept_rate=doc["settings"]["accept_rate"],
+        )
