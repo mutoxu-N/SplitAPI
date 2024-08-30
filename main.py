@@ -1,4 +1,4 @@
-from models import Settings, User, Receipt
+from models import Settings, Member, Receipt
 from fastapi import FastAPI, Request, Body, status, Form
 from pydantic import BaseModel
 from firebase import FirebaseApi
@@ -46,9 +46,9 @@ async def room_create(request: Request, settings: Settings = Body(embed=True)):
         id_not_generated = api.check_if_room_exists()
 
     # 生成したルームIDでルームの初期設定を行う
-    api.create_room(settings, request.headers['name'])
+    me = api.create_room(settings, request.headers['name'])
 
-    return {"room_id": room_id}
+    return {"room_id": room_id, "me": me}
 
 
 @app.post("/room/{room_id}/join")
@@ -76,14 +76,14 @@ async def accept(room_id, request: Request, accept_for: str, accepted: bool):
 
 
 @app.post("/room/{room_id}/create_guest")
-async def create_guest(room_id, request: Request, user: User):
+async def create_guest(room_id, request: Request, user: Member):
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.create_guest(user)
     return {"succeed": result}
 
 
 @app.post("/room/{room_id}/member/edit")
-async def edit_member(room_id, request: Request, old: str = Body(embed=True), new: User = Body(embed=True)):
+async def edit_member(room_id, request: Request, old: str = Body(embed=True), new: Member = Body(embed=True)):
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.edit_member(old, new)
     return {"succeed": result}

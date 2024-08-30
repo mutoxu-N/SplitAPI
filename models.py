@@ -35,7 +35,7 @@ class Receipt(BaseModel):
     timestamp: str
 
 
-class User(BaseModel):
+class Member(BaseModel):
     name: str
     uid: str | None
     weight: float

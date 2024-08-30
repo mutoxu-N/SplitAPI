@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
-from models import Role, Settings, User, Receipt
+from models import Role, Settings, Member, Receipt
 
 # サービスアカウントでログイン
 cred = credentials.Certificate("firebase_secret.json")
@@ -126,7 +126,7 @@ class FirebaseApi:
         else:
             return False
 
-    def create_room(self, settings: Settings, owner_name: str) -> None:
+    def create_room(self, settings: Settings, owner_name: str) -> Member:
         db = firestore.client()
         db.collection("rooms").document(self.room_id).set({
             "settings": {
@@ -146,6 +146,13 @@ class FirebaseApi:
             "weight": 1.0,
             "role": "OWNER",
         }, owner_name)
+
+        return Member(
+            name=owner_name,
+            uid=self.uid,
+            weight=1.0,
+            role=Role.OWNER,
+        )
 
     def join_room(self, member_name: str) -> dict:
         ret = {"joined": False, "pending": False}
@@ -307,7 +314,7 @@ class FirebaseApi:
             else:
                 return False
 
-    def create_guest(self, user: User):
+    def create_guest(self, user: Member):
         if not self.is_member():
             return False
 
@@ -327,7 +334,7 @@ class FirebaseApi:
         else:
             return False
 
-    def edit_member(self, old: str, new: User):
+    def edit_member(self, old: str, new: Member):
         if not self.is_member():
             return False
 
