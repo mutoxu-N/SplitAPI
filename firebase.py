@@ -165,6 +165,29 @@ class FirebaseApi:
         # 既に参加済みなら参加許可
         if self.is_member():
             ret["joined"] = True
+            doc = db.collection("rooms").document(
+                self.room_id).collection("members").document(self.get_name()).get()
+            d = doc.to_dict()
+            if d["name"] != member_name:
+                old_name = d["name"]
+                d["name"] = member_name
+
+                # ROOM/members を更新
+                self.edit_member(old_name, Member(
+                    name=member_name,
+                    uid=self.uid,
+                    weight=d["weight"],
+                    role=Role.of(d["role"]),
+                ))
+
+                # Room.users を更新
+                db.collection("rooms").document(self.room_id).set({
+                    "users": {
+                        self.uid: member_name,
+                    },
+                }, merge=True)
+
+            ret["me"] = d
             return ret
 
         doc = db.collection("rooms").document(
