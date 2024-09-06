@@ -130,9 +130,10 @@ class FirebaseApi:
         db = firestore.client()
         db.collection("rooms").document(self.room_id).set({
             "settings": {
+                "name": settings.name,
                 "split_unit": settings.split_unit,
                 "permission_receipt_create": settings.permission_receipt_create,
-                "permission_receipt_create": settings.permission_receipt_edit,
+                "permission_receipt_edit": settings.permission_receipt_edit,
                 "on_new_member_request": settings.on_new_member_request,
                 "accept_rate": settings.accept_rate,
             },
