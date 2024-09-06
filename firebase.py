@@ -145,7 +145,7 @@ class FirebaseApi:
             "name": owner_name,
             "id": self.uid,
             "weight": 1.0,
-            "role": "OWNER",
+            "role": Role.OWNER,
         }, owner_name)
 
         return Member(

@@ -4,16 +4,17 @@ from firebase_admin.firestore import SERVER_TIMESTAMP
 
 
 class Role(IntEnum):
-    OWNER = 3
-    MODERATOR = 2
-    NORMAL = 1
+    OWNER = 99
+    MODERATOR = 10
+    CREATOR = 1
+    NORMAL = 0
 
     @classmethod
-    def of(self, role_name: str):
+    def of(self, role: int):
         for e in Role:
-            if e.name == role_name.upper():
+            if e == role:
                 return e
-        raise ValueError(f"{role_name} is not a valid Role")
+        raise ValueError(f"{role} is not a valid Role")
 
 
 class Settings(BaseModel):
