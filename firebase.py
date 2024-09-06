@@ -388,14 +388,15 @@ class FirebaseApi:
         if not self.is_member():
             return False
 
-        if self.get_role() >= Role.MODERATOR:
+        if self.get_role() >= Role.OWNER:
             db = firestore.client()
             doc = db.collection("rooms").document(self.room_id)
             doc.set({
                 "settings": {
+                    "name": settings.name,
                     "split_unit": settings.split_unit,
                     "permission_receipt_create": settings.permission_receipt_create,
-                    "permission_receipt_create": settings.permission_receipt_edit,
+                    "permission_receipt_edit": settings.permission_receipt_edit,
                     "on_new_member_request": settings.on_new_member_request,
                     "accept_rate": settings.accept_rate,
                 },
@@ -419,7 +420,7 @@ class FirebaseApi:
             receipts = doc.collection("receipts").list_documents()
             for r in receipts:
                 r.delete()
-                doc.delete()
+            doc.delete()
             return True
         return False
 
