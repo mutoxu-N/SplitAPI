@@ -104,14 +104,15 @@ async def room_delete(room_id, request: Request):
 
 
 @app.post("/room/{room_id}/receipt/add")
-async def receipt_add(room_id, request: Request, receipt: Receipt):
+async def add_receipt(room_id, request: Request, receipt: Receipt):
+    print(await request.json())
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.add_receipt(receipt)
     return {"succeed": result}
 
 
 @app.post("/room/{room_id}/receipt/edit")
-async def receipt_edit(room_id, request: Request, receipt_id: str = Body(embed=True), receipt: Receipt = Body(embed=True)):
+async def edit_receipt(room_id, request: Request, receipt_id: str = Body(embed=True), receipt: Receipt = Body(embed=True)):
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.edit_receipt(receipt_id, receipt)
     return {"succeed": result}

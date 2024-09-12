@@ -450,14 +450,17 @@ class FirebaseApi:
 
             # 権限チェック
         role = self.get_role()
-        perm = Role.of(self.__get_settings().permission_receipt_edit)
+        perm = Role.of(self.__get_settings().permission_receipt_create)
         if role < perm:
             return False
 
         db = firestore.client()
         doc = db.collection("rooms").document(self.room_id) \
             .collection("receipts").document(receipt_id)
+
+        receipt.reported_by = self.uid
         doc.set(receipt.toMap(), merge=True)
+
         return True
 
     def __join(self, member_name=None, uid=None):

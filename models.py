@@ -10,11 +10,11 @@ class Role(IntEnum):
     NORMAL = 0
 
     @classmethod
-    def of(self, role: int):
+    def of(self, role: int | str):
         for e in Role:
-            if e == role:
+            if (isinstance(role, int) and e.value == role) or (isinstance(role, str) and e.name == role.upper()):
                 return e
-        raise ValueError(f"{role} is not a valid Role")
+        raise ValueError(f"{role}: {type(role)} is not a valid Role")
 
 
 class Settings(BaseModel):
