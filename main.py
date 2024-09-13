@@ -75,10 +75,17 @@ async def accept(room_id, request: Request, accept_for: str, accepted: bool):
     return {"succeed": result}
 
 
-@app.post("/room/{room_id}/create_guest")
-async def create_guest(room_id, request: Request, user: Member):
+@app.post("/room/{room_id}/guest/create")
+async def create_guest(room_id, request: Request, name: str = Body(embed=True)):
     api = FirebaseApi(request.headers['token'], room_id)
-    result = api.create_guest(user)
+    result = api.create_guest(name)
+    return {"succeed": result}
+
+
+@app.post("/room/{room_id}/guest/delete")
+async def delete_guest(room_id, request: Request, name: str = Body(embed=True)):
+    api = FirebaseApi(request.headers['token'], room_id)
+    result = api.delete_guest(name)
     return {"succeed": result}
 
 

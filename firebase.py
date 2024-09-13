@@ -338,7 +338,7 @@ class FirebaseApi:
             else:
                 return False
 
-    def create_guest(self, user: Member):
+    def create_guest(self, user: str):
         if not self.is_member():
             return False
 
@@ -348,11 +348,42 @@ class FirebaseApi:
                 .collection("rooms").document(self.room_id) \
                 .collection("members")
             col.add({
-                "name": user.name,
+                "name": user,
                 "id": None,
-                "weight": user.weight,
-                "role": user.role
-            }, user.name)
+                "weight": 1.0,
+                "role": Role.NORMAL,
+            }, user)
+            return True
+
+        else:
+            return False
+
+    def delete_guest(self, user: str):
+        if not self.is_member():
+            return False
+
+        if self.get_role() >= Role.MODERATOR:
+            db = firestore.client()
+
+            # check
+            receipts = db \
+                .collection("rooms").document(self.room_id) \
+                .collection("receipts").list_documents()
+
+            for r in receipts:
+                if r.to_dict()["paid"] == user:
+                    return False
+
+            # delete
+            for r in receipts:
+                buyers = r.to_dict()["buyers"]
+                if user in buyers:
+                    r.set("buyers", buyers.remove(user))
+
+            doc = db \
+                .collection("rooms").document(self.room_id) \
+                .collection("members").document(user)
+            doc.delete()
             return True
 
         else:
@@ -379,6 +410,14 @@ class FirebaseApi:
                 "weight": new.weight,
                 "role": new.role
             }, new.name)
+
+            if new.role == Role.OWNER:
+                members = db.collection("rooms").document(
+                    self.room_id).collection("members").list_documents()
+                for m in members:
+                    if m.to_dict()["role"] == Role.OWNER:
+                        m.set("role", Role.MODERATOR)
+
             return True
 
         else:
