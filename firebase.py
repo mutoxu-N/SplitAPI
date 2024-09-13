@@ -166,19 +166,20 @@ class FirebaseApi:
         # 既に参加済みなら参加許可
         if self.is_member():
             ret["joined"] = True
-            doc = db.collection("rooms").document(
-                self.room_id).collection("members").document(self.get_name()).get()
-            d = doc.to_dict()
-            if d["name"] != member_name:
-                old_name = d["name"]
-                d["name"] = member_name
+            doc = db.collection("rooms").document(self.room_id).get().to_dict()
+            d = doc["users"]
+            if self.uid in d:
+                old_name = d[self.uid]
+                d[self.uid] = member_name
 
                 # ROOM/members を更新
+                m = db.collection("rooms").document(self.room_id).collection(
+                    "members").document(old_name).get().to_dict()
                 self.edit_member(old_name, Member(
                     name=member_name,
                     uid=self.uid,
-                    weight=d["weight"],
-                    role=Role.of(d["role"]),
+                    weight=m["weight"],
+                    role=Role.of(m["role"]),
                 ))
 
                 # Room.users を更新
@@ -404,6 +405,31 @@ class FirebaseApi:
             col = db \
                 .collection("rooms").document(self.room_id) \
                 .collection("members")
+
+            if new.role == Role.OWNER:
+                members = db.collection("rooms").document(
+                    self.room_id).collection("members").list_documents()
+                for m in members:
+                    print(m)
+                    if m["role"] == Role.OWNER:
+                        m.set("role", Role.MODERATOR)
+
+            # レシート更新
+            receipts = db.collection("rooms").document(
+                self.room_id).collection("receipts").list_documents()
+            for receipt in receipts:
+                r = receipt.get()
+                d = r.to_dict()
+                if d["paid"] == old:
+                    d["paid"] = new.name
+
+                if old in d["buyers"]:
+                    d["buyers"].remove(old)
+                    d["buyers"].append(new.name)
+
+                print(d)
+                receipt.set(d, merge=True)
+
             col.add({
                 "name": new.name,
                 "id": new.uid,
@@ -411,12 +437,12 @@ class FirebaseApi:
                 "role": new.role
             }, new.name)
 
-            if new.role == Role.OWNER:
-                members = db.collection("rooms").document(
-                    self.room_id).collection("members").list_documents()
-                for m in members:
-                    if m.to_dict()["role"] == Role.OWNER:
-                        m.set("role", Role.MODERATOR)
+            # Room.users を更新
+            db.collection("rooms").document(self.room_id).set({
+                "users": {
+                    self.uid: new.name,
+                },
+            }, merge=True)
 
             return True
 
