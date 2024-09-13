@@ -198,7 +198,7 @@ class FirebaseApi:
         settings = doc.to_dict()["settings"]
         if settings["on_new_member_request"] == "always":
             # 誰でも参加可能
-            self.__join(member_name)
+            self.__join(member_name, self.uid)
             ret["joined"] = True
 
         elif settings["on_new_member_request"] == "vote" or \
@@ -537,7 +537,7 @@ class FirebaseApi:
             "name": member_name,
             "id": uid,
             "weight": 1.0,
-            "role": "NORMAL",
+            "role": 0,
         }, member_name)
         db.collection("rooms").document(self.room_id).set({
             "users": {
