@@ -189,6 +189,9 @@ class FirebaseApi:
                     },
                 }, merge=True)
 
+                # pending_users を削除
+                db.collection("pending_users").document(self.uid).delete()
+
             ret["me"] = d
             return ret
 
@@ -217,7 +220,7 @@ class FirebaseApi:
                 "required": int(len(members.keys())/100*settings["accept_rate"]),
                 "size": len(members.keys()),
                 "voted": []
-            }, member_name)
+            }, self.uid)
 
             ret["pending"] = True
 
@@ -293,16 +296,16 @@ class FirebaseApi:
         doc = db.collection("rooms").document(
             self.room_id).get()
         settings = doc.to_dict()["settings"]
-
         # このユーザーが参加待機中かどうか確認
-        pending_doc = db.collection("rooms").document(self.room_id).collection(
-            "pending").document(accept_for).get()
+        pending_ref = db.collection("rooms").document(self.room_id).collection(
+            "pending").document(accept_for)
+        pending_doc = pending_ref.get()
         if not pending_doc.exists:
             # 参加待機中でないならなにもしない
             return False
 
         role = self.get_role()
-        if settings["on_new_member_request"] == "accepted_by_mods":
+        if settings["on_new_member_request"] == "accept_by_mods":
             if role >= Role.MODERATOR:
                 if accepted:
                     # 承認
@@ -311,7 +314,10 @@ class FirebaseApi:
                         pending_doc.to_dict()["id"],
                     )
 
-                pending_doc.set({
+                db.collection("pending_users").document(accept_for).set({
+                    "is_approved": True,
+                }, merge=True)
+                pending_ref.set({
                     "is_accepted": accepted,
                     "voted": [self.uid],
                 }, merge=True)
@@ -320,7 +326,7 @@ class FirebaseApi:
             else:
                 return False
 
-        if settings["on_new_member_request"] == "accepted_by_owner":
+        if settings["on_new_member_request"] == "accept_by_owner":
             if role >= Role.OWNER:
                 if accepted:
                     # 承認
@@ -330,7 +336,7 @@ class FirebaseApi:
                     )
                     return True
 
-                pending_doc.set({
+                pending_ref.set({
                     "is_accepted": accepted,
                     "voted": [self.uid],
                 }, merge=True)
@@ -391,6 +397,7 @@ class FirebaseApi:
             return False
 
     def edit_member(self, old: str, new: Member):
+        print(old, new)
         if not self.is_member():
             return False
 
@@ -400,18 +407,22 @@ class FirebaseApi:
                 .collection("rooms").document(self.room_id) \
                 .collection("members").document(old)
 
+            old_role = None
             if doc.get().exists:
+                old_role = doc.get().to_dict()["role"]
                 doc.delete()
             col = db \
                 .collection("rooms").document(self.room_id) \
                 .collection("members")
 
-            if new.role == Role.OWNER:
+            # オーナーの変更
+            if new.role == Role.OWNER and old_role != Role.OWNER:
                 members = db.collection("rooms").document(
                     self.room_id).collection("members").list_documents()
+                print(members)
                 for m in members:
                     print(m)
-                    if m["role"] == Role.OWNER:
+                    if m.get()["role"] == Role.OWNER:
                         m.set("role", Role.MODERATOR)
 
             # レシート更新
@@ -438,11 +449,12 @@ class FirebaseApi:
             }, new.name)
 
             # Room.users を更新
-            db.collection("rooms").document(self.room_id).set({
-                "users": {
-                    self.uid: new.name,
-                },
-            }, merge=True)
+            if new.uid is not None:
+                db.collection("rooms").document(self.room_id).set({
+                    "users": {
+                        new.uid: new.name,
+                    },
+                }, merge=True)
 
             return True
 
@@ -532,7 +544,17 @@ class FirebaseApi:
         if member_name is None or uid is None:
             member_name = self.get_name()
             uid = self.uid
+
+        # メンバー名がかぶっていたら修正
         db = firestore.client()
+        members = set(db.collection("rooms").document(
+            self.room_id).get(["users"]).to_dict()["users"].values())
+        old = member_name
+        num = 0
+        while member_name in members:
+            num += 1
+            member_name = f"{old} {num}"
+
         db.collection("rooms").document(self.room_id).collection("members").add({
             "name": member_name,
             "id": uid,
