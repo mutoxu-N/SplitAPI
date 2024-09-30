@@ -62,7 +62,7 @@ async def room_join(room_id, request: Request):
 @app.post("/room/{room_id}/cancel")
 async def cancel(room_id, request: Request):
     api = FirebaseApi(request.headers['token'], room_id)
-    api.cancel(request.headers['name'])
+    api.cancel()
 
 
 @app.post("/room/{room_id}/vote")
