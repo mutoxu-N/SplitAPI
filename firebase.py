@@ -226,6 +226,12 @@ class FirebaseApi:
 
         return ret
 
+    def cancel(self):
+        db = firestore.client()
+        db.collection("pending_users").document(self.uid).delete()
+        db.collection("rooms").document(self.room_id).collection(
+            "pending").document(self.uid).delete()
+
     def vote(self, vote_for: str, accepted: bool) -> dict:
         if not self.is_member():
             return False
@@ -334,8 +340,10 @@ class FirebaseApi:
                         pending_doc.to_dict()["name"],
                         pending_doc.to_dict()["id"],
                     )
-                    return True
 
+                db.collection("pending_users").document(accept_for).set({
+                    "is_approved": True,
+                }, merge=True)
                 pending_ref.set({
                     "is_accepted": accepted,
                     "voted": [self.uid],
@@ -387,10 +395,14 @@ class FirebaseApi:
                 if user in buyers:
                     r.set("buyers", buyers.remove(user))
 
-            doc = db \
-                .collection("rooms").document(self.room_id) \
-                .collection("members").document(user)
-            doc.delete()
+            db.collection("rooms").document(self.room_id).collection(
+                "members").document(user).delete()
+            ref = db.collection("rooms").document(self.room_id)
+            d: dict = ref.get().to_dict(["users"])
+            d.pop(self.uid)
+            ref.update({
+                "users": d
+            })
             return True
 
         else:
@@ -566,6 +578,8 @@ class FirebaseApi:
                 uid: member_name,
             },
         }, merge=True)
+        db.collection("rooms").document(self.room_id).collection(
+            "pending").document(self.uid).delete()
 
     def __get_settings(self):
         db = firestore.client()

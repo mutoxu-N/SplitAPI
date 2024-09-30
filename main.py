@@ -59,6 +59,12 @@ async def room_join(room_id, request: Request):
     return result
 
 
+@app.post("/room/{room_id}/cancel")
+async def cancel(room_id, request: Request):
+    api = FirebaseApi(request.headers['token'], room_id)
+    api.cancel(request.headers['name'])
+
+
 @app.post("/room/{room_id}/vote")
 async def vote(room_id, request: Request, vote_for: str, accepted: bool):
     # TODO: Androidアプリ側の実装をしてからデバッグする
