@@ -66,7 +66,7 @@ async def cancel(room_id, request: Request):
 
 
 @app.post("/room/{room_id}/vote")
-async def vote(room_id, request: Request, vote_for: str, accepted: bool):
+async def vote(room_id, request: Request, vote_for: str = Body(embed=True), accepted: bool = Body(embed=True)):
     # TODO: Androidアプリ側の実装をしてからデバッグする
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.vote(vote_for, accepted)

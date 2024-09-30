@@ -240,8 +240,9 @@ class FirebaseApi:
         db = firestore.client()
 
         # このユーザーが投票中かどうか確認
-        pending_doc = db.collection("rooms").document(self.room_id).collection(
-            "pending").document(vote_for).get()
+        pending_ref = db.collection("rooms").document(self.room_id).collection(
+            "pending").document(vote_for)
+        pending_doc = pending_ref.get()
         if not pending_doc.exists:
             # 投票中でないならなにもしない
             return ret
@@ -257,10 +258,9 @@ class FirebaseApi:
             # 承認
             if now["approval"] + 1 >= now["required"]:
                 # 投票による承認
-                pending_doc.set({
-                    "is_accepted": True,
-                    "approval": now["approval"] + 1,
-                    "voted": now["voted"] + [self.uid],
+                pending_ref.delete()
+                db.collection("pending_users").document(vote_for).set({
+                    "is_approved": True,
                 }, merge=True)
 
                 self.__join(
@@ -270,7 +270,7 @@ class FirebaseApi:
 
             else:
                 # 投票結果未確定
-                pending_doc.set({
+                pending_ref.set({
                     "approval": now["approval"] + 1,
                     "voted": now["voted"] + [self.uid],
                 }, merge=True)
@@ -279,14 +279,15 @@ class FirebaseApi:
             # 否認
             if now["size"] - len(now["voted"])-1 + now["approval"] < now["required"]:
                 # 投票結果確定(否認)
-                pending_doc.set({
-                    "is_accepted": False,
-                    "voted": now["voted"] + [self.uid],
+                pending_ref.delete()
+
+                db.collection("pending_users").document(vote_for).set({
+                    "is_approved": None,
                 }, merge=True)
 
             else:
                 # 投票結果未確定
-                pending_doc.set({
+                pending_ref.set({
                     "voted": now["voted"] + [self.uid],
                 }, merge=True)
         ret["voted"] = True
