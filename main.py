@@ -118,7 +118,6 @@ async def room_delete(room_id, request: Request):
 
 @app.post("/room/{room_id}/receipt/add")
 async def add_receipt(room_id, request: Request, receipt: Receipt):
-    print(await request.json())
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.add_receipt(receipt)
     return {"succeed": result}

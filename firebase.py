@@ -189,8 +189,11 @@ class FirebaseApi:
                     },
                 }, merge=True)
 
-                # pending_users を削除
-                db.collection("pending_users").document(self.uid).delete()
+            # pending_users を削除
+            print("delete")
+            db.collection("pending_users").document(self.uid).delete()
+            db.collection("rooms").document(self.room_id).collection(
+                "pending").document(self.uid).delete()
 
             ret["me"] = d
             return ret
@@ -294,7 +297,6 @@ class FirebaseApi:
         return ret
 
     def accept(self, accept_for: str, accepted: bool):
-        # TODO: Androidアプリ側の実装をしてからデバッグする
         if not self.is_member():
             return False
 
@@ -303,6 +305,7 @@ class FirebaseApi:
         doc = db.collection("rooms").document(
             self.room_id).get()
         settings = doc.to_dict()["settings"]
+
         # このユーザーが参加待機中かどうか確認
         pending_ref = db.collection("rooms").document(self.room_id).collection(
             "pending").document(accept_for)
@@ -321,13 +324,19 @@ class FirebaseApi:
                         pending_doc.to_dict()["id"],
                     )
 
-                db.collection("pending_users").document(accept_for).set({
-                    "is_approved": True,
-                }, merge=True)
-                pending_ref.set({
-                    "is_accepted": accepted,
-                    "voted": [self.uid],
-                }, merge=True)
+                    db.collection("pending_users").document(accept_for).set({
+                        "is_approved": True,
+                    }, merge=True)
+                    pending_ref.set({
+                        "is_accepted": accepted,
+                        "voted": [self.uid],
+                    }, merge=True)
+
+                else:
+                    db.collection("pending_users").document(
+                        accept_for).delete()
+                    db.collection("rooms").document(self.room_id).collection(
+                        "pending").document(accept_for).delete()
                 return True
 
             else:
@@ -342,13 +351,19 @@ class FirebaseApi:
                         pending_doc.to_dict()["id"],
                     )
 
-                db.collection("pending_users").document(accept_for).set({
-                    "is_approved": True,
-                }, merge=True)
-                pending_ref.set({
-                    "is_accepted": accepted,
-                    "voted": [self.uid],
-                }, merge=True)
+                    db.collection("pending_users").document(accept_for).set({
+                        "is_approved": True,
+                    }, merge=True)
+                    pending_ref.set({
+                        "is_accepted": accepted,
+                        "voted": [self.uid],
+                    }, merge=True)
+
+                else:
+                    db.collection("pending_users").document(
+                        accept_for).delete()
+                    db.collection("rooms").document(self.room_id).collection(
+                        "pending").document(accept_for).delete()
                 return True
 
             else:
@@ -500,17 +515,12 @@ class FirebaseApi:
 
         if self.get_role() >= Role.OWNER:
             db = firestore.client()
-            doc = db.collection("rooms").document(self.room_id)
-            pending = doc.collection("pending").list_documents()
+            room_ref = db.collection("rooms").document(self.room_id)
+            pending = room_ref.collection("pending").list_documents()
             for p in pending:
-                p.delete()
-            member = doc.collection("members").list_documents()
-            for m in member:
-                m.delete()
-            receipts = doc.collection("receipts").list_documents()
-            for r in receipts:
-                r.delete()
-            doc.delete()
+                db.collection("pending_users").document(
+                    p.get().to_dict()["id"]).get().delete()
+            db.recursive_delete(room_ref)
             return True
         return False
 
