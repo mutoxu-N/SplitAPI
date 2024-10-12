@@ -19,17 +19,6 @@ LENGTH_ROOM_ID = 6
 app = FastAPI()
 
 
-@app.post("/test")
-async def test(request: Request):
-    api = FirebaseApi(request.headers['token'], "AB12C3")
-
-
-@app.post("/reset")
-async def reset(request: Request):
-    api = FirebaseApi(request.headers['token'], "AB12C3")
-    api.reset_firestore()
-
-
 @app.post("/room/create")
 async def room_create(request: Request, settings: Settings = Body(embed=True)):
     # 新しいルームIDの作成
@@ -67,7 +56,6 @@ async def cancel(room_id, request: Request):
 
 @app.post("/room/{room_id}/vote")
 async def vote(room_id, request: Request, vote_for: str = Body(embed=True), accepted: bool = Body(embed=True)):
-    # TODO: Androidアプリ側の実装をしてからデバッグする
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.vote(vote_for, accepted)
     return result
@@ -75,7 +63,6 @@ async def vote(room_id, request: Request, vote_for: str = Body(embed=True), acce
 
 @app.post("/room/{room_id}/accept")
 async def accept(room_id, request: Request, accept_for: str = Body(embed=True), accepted: bool = Body(embed=True)):
-    # TODO: Androidアプリ側の実装をしてからデバッグする
     api = FirebaseApi(request.headers['token'], room_id)
     result = api.accept(accept_for, accepted)
     return {"succeed": result}

@@ -27,7 +27,6 @@ class FirebaseApi:
     def __is_valid_uid(self) -> bool:
         return self.uid is not None
 
-    def reset_firestore(self) -> None:
         if not self.__is_valid_uid():
             return
 
@@ -238,7 +237,7 @@ class FirebaseApi:
     def vote(self, vote_for: str, accepted: bool) -> dict:
         if not self.is_member():
             return False
-        # TODO: Androidアプリ側の実装をしてからデバッグする
+
         ret = {"voted": False}
         db = firestore.client()
 
