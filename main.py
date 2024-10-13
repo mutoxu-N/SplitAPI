@@ -1,6 +1,5 @@
 from models import Settings, Member, Receipt
 from fastapi import FastAPI, Request, Body, status, Form
-from pydantic import BaseModel
 from firebase import FirebaseApi
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -8,9 +7,9 @@ from fastapi.responses import JSONResponse
 import random
 import string
 
-import os
-os.environ["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
-os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "localhost:9099"
+# import os
+# os.environ["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
+# os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "localhost:9099"
 
 
 # consts

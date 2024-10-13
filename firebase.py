@@ -6,7 +6,7 @@ from firebase_admin import auth
 from models import Role, Settings, Member, Receipt
 
 # サービスアカウントでログイン
-cred = credentials.Certificate("firebase_secret.json")
+cred = credentials.Certificate("/src/firebase_secret.json")
 firebase_admin.initialize_app(cred)
 
 

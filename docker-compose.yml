@@ -1,0 +1,8 @@
+version: "3"
+services:
+    web:
+        build: .
+        image: split-api
+        container_name: split-api
+        ports:
+            - "11512:11512" 
