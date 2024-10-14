@@ -76,6 +76,7 @@ class FirebaseApi:
             "users": {
                 self.uid: owner_name,
             },
+            "edited": firestore.SERVER_TIMESTAMP,
         })
         db.collection("rooms").document(self.room_id).collection("members").add({
             "name": owner_name,
@@ -124,9 +125,9 @@ class FirebaseApi:
                         self.uid: member_name,
                     },
                 }, merge=True)
+                self.__room_updated()
 
             # pending_users を削除
-            print("delete")
             db.collection("pending_users").document(self.uid).delete()
             db.collection("rooms").document(self.room_id).collection(
                 "pending").document(self.uid).delete()
@@ -230,6 +231,7 @@ class FirebaseApi:
                     "voted": now["voted"] + [self.uid],
                 }, merge=True)
         ret["voted"] = True
+        self.__room_updated()
         return ret
 
     def accept(self, accept_for: str, accepted: bool):
@@ -320,6 +322,7 @@ class FirebaseApi:
                 "weight": 1.0,
                 "role": Role.NORMAL,
             }, user)
+            self.__room_updated()
             return True
 
         else:
@@ -355,13 +358,13 @@ class FirebaseApi:
             ref.update({
                 "users": d
             })
+            self.__room_updated()
             return True
 
         else:
             return False
 
     def edit_member(self, old: str, new: Member):
-        print(old, new)
         if not self.is_member():
             return False
 
@@ -383,9 +386,7 @@ class FirebaseApi:
             if new.role == Role.OWNER and old_role != Role.OWNER:
                 members = db.collection("rooms").document(
                     self.room_id).collection("members").list_documents()
-                print(members)
                 for m in members:
-                    print(m)
                     if m.get()["role"] == Role.OWNER:
                         m.set("role", Role.MODERATOR)
 
@@ -401,8 +402,6 @@ class FirebaseApi:
                 if old in d["buyers"]:
                     d["buyers"].remove(old)
                     d["buyers"].append(new.name)
-
-                print(d)
                 receipt.set(d, merge=True)
 
             col.add({
@@ -420,6 +419,7 @@ class FirebaseApi:
                     },
                 }, merge=True)
 
+            self.__room_updated()
             return True
 
         else:
@@ -442,6 +442,7 @@ class FirebaseApi:
                     "accept_rate": settings.accept_rate,
                 },
             }, merge=True)
+            self.__room_updated()
             return True
         return False
 
@@ -478,6 +479,7 @@ class FirebaseApi:
             "reported_by": self.uid,
             "timestamp": time,
         }, merge=True)
+        self.__room_updated()
         return True
 
     def edit_receipt(self, receipt_id: str, receipt: Receipt):
@@ -496,6 +498,7 @@ class FirebaseApi:
 
         receipt.reported_by = self.uid
         doc.set(receipt.toMap(), merge=True)
+        self.__room_updated()
 
         return True
 
@@ -527,6 +530,7 @@ class FirebaseApi:
         }, merge=True)
         db.collection("rooms").document(self.room_id).collection(
             "pending").document(self.uid).delete()
+        self.__room_updated()
 
     def __get_settings(self):
         db = firestore.client()
@@ -539,3 +543,11 @@ class FirebaseApi:
             on_new_member_request=doc["settings"]["on_new_member_request"],
             accept_rate=doc["settings"]["accept_rate"],
         )
+    
+
+    def __room_updated(self):
+        db = firestore.client()
+        db.collection("rooms").document(self.room_id).set({
+            "edited": firestore.SERVER_TIMESTAMP,
+        }, merge=True)
+
