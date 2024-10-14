@@ -151,6 +151,7 @@ class FirebaseApi:
             db.collection("pending_users").add({
                 "id": self.uid,
                 "is_approved": None,
+                "requested": firestore.SERVER_TIMESTAMP,
             }, self.uid)
             db.collection("rooms").document(self.room_id).collection("pending").add({
                 "name": member_name,
@@ -159,7 +160,8 @@ class FirebaseApi:
                 "approval": 0,
                 "required": int(len(members.keys())/100*settings["accept_rate"]),
                 "size": len(members.keys()),
-                "voted": []
+                "voted": [],
+                "requested": firestore.SERVER_TIMESTAMP,
             }, self.uid)
 
             ret["pending"] = True
