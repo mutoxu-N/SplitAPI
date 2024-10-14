@@ -24,69 +24,6 @@ class FirebaseApi:
         except auth.InvalidIdTokenError:
             print(f"Invalid Token: {token[:80]}...")
 
-    def __is_valid_uid(self) -> bool:
-        return self.uid is not None
-
-        if not self.__is_valid_uid():
-            return
-
-        # リセット
-        db = firestore.client()
-        # db.collection("pending_users").document(self.uid)
-
-        doc = db.collection("rooms").document(self.room_id)
-        pending = doc.collection("pending").list_documents()
-        for p in pending:
-            p.delete()
-        member = doc.collection("members").list_documents()
-        for m in member:
-            m.delete()
-        receipts = doc.collection("receipts").list_documents()
-        for r in receipts:
-            r.delete()
-            doc.delete()
-
-        room_AB12C3 = db.collection("rooms").document("AB12C3")
-        room_AB12C3.set({
-            "settings": {
-                "name": "sample room",
-                "accept_rate": 50,
-                "permission_receipt_create": "NORMAL",
-                "permission_receipt_edit": "OWNER",
-                "split_unit": 10,
-                "on_new_member_request": "always",
-            },
-            "users": {
-                self.uid: "sample member",
-            },
-        })
-
-        room_AB12C3.collection("members").add({
-            "name": "sample member",
-            "id": self.uid,
-            "weight": 1.0,
-            "role": "OWNER",
-        }, "sample member")
-
-        room_AB12C3.collection("pending").add({
-            "name": "pending member",
-            "id": self.uid,
-            "is_accepted": False,
-            "approval": 0,
-            "required": 1,
-            "size": 1,
-            "voted": []
-        }, "pending member")
-
-        room_AB12C3.collection("receipts").add({
-            "stuff": "item",
-            "paid": "sample member",
-            "buyers": ["sample member"],
-            "payment": 2500,
-            "reported_by": self.uid,
-            "timestamp": firestore.SERVER_TIMESTAMP,
-        })
-
     def is_member(self) -> bool:
         # ルームのメンバーか否かを判定
         if self.uid is None:
