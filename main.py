@@ -15,7 +15,7 @@ import string
 # consts
 LENGTH_ROOM_ID = 6
 
-app = FastAPI(root_path="/split")
+app = FastAPI(root_path="/split",docs_url=None, redoc_url=None)
 
 
 @app.post("/room/create")
