@@ -6,3 +6,8 @@ services:
         container_name: split-api
         ports:
             - "11512:11512" 
+
+networks:
+    default:
+        name: proxy_default
+        external: true
