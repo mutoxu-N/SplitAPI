@@ -4,6 +4,7 @@ services:
         build: .
         image: split-api
         container_name: split-api
+        restart: always
         ports:
             - "11512:11512" 
 
